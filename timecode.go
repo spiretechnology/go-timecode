@@ -10,6 +10,13 @@ type Components struct {
 	Hours, Minutes, Seconds, Frames int64
 }
 
+func (c Components) Equals(other Components) bool {
+	return c.Hours == other.Hours &&
+		c.Minutes == other.Minutes &&
+		c.Seconds == other.Seconds &&
+		c.Frames == other.Frames
+}
+
 // Timecode represents a timecode value, either as a duration or a specific point in time
 type Timecode struct {
 	frame int64
@@ -22,7 +29,7 @@ func (t *Timecode) Frame() int64 {
 }
 
 // Components gets the components of the timecode: hours, minutes, seconds, frames.
-func (t *Timecode) Components() *Components {
+func (t *Timecode) Components() Components {
 
 	// Track the total number of frames in the timecode. If it's a drop frame rate, we need to
 	// increment the number of frames to make the rest of the calculations work out.
@@ -46,7 +53,7 @@ func (t *Timecode) Components() *Components {
 	hours := (totalMinutes - minutes) / 60
 
 	// Return the components
-	return &Components{
+	return Components{
 		hours,
 		minutes,
 		seconds,
