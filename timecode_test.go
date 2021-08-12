@@ -11,7 +11,7 @@ func TestTimecode_FrameToString_DF(t *testing.T) {
 		2878: "00:02:00;02",
 	}
 	for f, tcode := range cases {
-		tc := timecode.FromFrames(f, timecode.Rate_23_976)
+		tc := timecode.FromFrame(f, timecode.Rate_23_976)
 		if str := tc.String(); str != tcode {
 			t.Errorf("Frame %d should be equivalent to timecode %s. Got %s\n", f, tcode, str)
 		} else {

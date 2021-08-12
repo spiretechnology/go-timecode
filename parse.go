@@ -54,10 +54,10 @@ func FromComponents(components *Components, rate Rate) (*Timecode, error) {
 
 }
 
-func FromFrames(frames int64, rate Rate) *Timecode {
+func FromFrame(frame int64, rate Rate) *Timecode {
 	return &Timecode{
-		frame: frames,
-		rate:  rate,
+		frame,
+		rate,
 	}
 }
 

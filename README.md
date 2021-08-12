@@ -22,7 +22,7 @@ tc.Frame() // => 1511
 
 ## Create a timecode from a frame count
 ```go
-tc := timecode.FromFrames(1511, timecode.Rate_24)
+tc := timecode.FromFrame(1511, timecode.Rate_24)
 tc.String() // => 00:01:02:23
 tc.Frame() // => 1511
 ```
