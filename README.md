@@ -6,14 +6,14 @@ Development of this library is very test-driven to ensure accuracy of the frame 
 
 ## Parse a timecode
 
-### Example with drop frame (23.976 FPS)
+#### Drop frame (23.976 FPS)
 ```go
 tc, err := timecode.Parse("00:01:02;23", timecode.Rate_23_976)
 tc.String() // => 00:01:02;23
 tc.Frame() // => 1509
 ```
 
-### Example without drop frame (24 FPS)
+#### Non-drop frame (24 FPS)
 ```go
 tc, err := timecode.Parse("00:01:02:23", timecode.Rate_24)
 tc.String() // => 00:01:02:23
