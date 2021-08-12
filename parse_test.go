@@ -59,6 +59,26 @@ func TestParseInvalidDF(t *testing.T) {
 	}
 }
 
+// TestParseInvalidDFInNDFRate makes sure that the above drop frame rounding behavior
+// doesn't affect parsing NDF timecodes.
+func TestParseInvalidDFInNDFRate(t *testing.T) {
+	cases := []string{
+		"00:01:59:23",
+		"00:02:00:00",
+		"00:02:00:01",
+		"00:02:00:02",
+		"00:02:00:03",
+	}
+	for _, s := range cases {
+		tc, _ := timecode.Parse(s, timecode.Rate_24)
+		if str := tc.String(); str != s {
+			t.Errorf("NDF timecode %s should NOT be rounded. Got %s\n", s, str)
+		} else {
+			t.Logf("Success, NDF timecode %s stayed the same\n", s)
+		}
+	}
+}
+
 func TestFromPresentationTime(t *testing.T) {
 	cases := map[time.Duration]string{
 		time.Minute * 2:             "00:02:00:00",
