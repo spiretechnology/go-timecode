@@ -26,7 +26,7 @@ func Parse(timecode string, rate Rate) (*Timecode, error) {
 	frames, _ := strconv.ParseInt(match[7], 10, 64)
 
 	// Combine the components
-	return FromComponents(&Components{
+	return FromComponents(Components{
 		hours,
 		minutes,
 		seconds,
@@ -35,7 +35,22 @@ func Parse(timecode string, rate Rate) (*Timecode, error) {
 
 }
 
-func FromComponents(components *Components, rate Rate) (*Timecode, error) {
+func FromComponents(components Components, rate Rate) (*Timecode, error) {
+
+	// If the rate is drop frame, we need to check that the provided frame
+	// isn't a dropped frame, which needs to be rounded to the nearest
+	// valid frame timecode
+	if rate.DropFrame {
+
+		// If it's a dropped frame
+		if (components.Minutes%10 > 0) && (components.Seconds == 0) && (components.Frames == 0 || components.Frames == 1) {
+
+			// Move to the next valid frame in sequence
+			components.Frames = 2
+
+		}
+
+	}
 
 	// Count up the total number of frames
 	totalSeconds := (((components.Hours * 60) + components.Minutes) * 60) + components.Seconds

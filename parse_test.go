@@ -41,6 +41,24 @@ func TestParse_DF(t *testing.T) {
 	}
 }
 
+func TestParseInvalidDF(t *testing.T) {
+	cases := map[string]string{
+		"00:01:59;23": "00:01:59;23",
+		"00:02:00;00": "00:02:00;02",
+		"00:02:00;01": "00:02:00;02",
+		"00:02:00;02": "00:02:00;02",
+		"00:02:00;03": "00:02:00;03",
+	}
+	for k, s := range cases {
+		tc, _ := timecode.Parse(k, timecode.Rate_23_976)
+		if str := tc.String(); str != s {
+			t.Errorf("DF timecode %s should be rounded to timecode %s. Got %s\n", k, s, str)
+		} else {
+			t.Logf("Success, DF timecode %s rounded to %s\n", k, s)
+		}
+	}
+}
+
 func TestFromPresentationTime(t *testing.T) {
 	cases := map[time.Duration]string{
 		time.Minute * 2:             "00:02:00:00",
