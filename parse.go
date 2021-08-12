@@ -4,6 +4,7 @@ import (
 	"errors"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 // TimecodeRegex is the pattern for a valid SMPTE timecode
@@ -56,6 +57,13 @@ func FromComponents(components *Components, rate Rate) (*Timecode, error) {
 func FromFrames(frames int64, rate Rate) *Timecode {
 	return &Timecode{
 		frame: frames,
+		rate:  rate,
+	}
+}
+
+func FromPresentationTime(presentationTime time.Duration, rate Rate) *Timecode {
+	return &Timecode{
+		frame: int64(presentationTime / rate.PlaybackFrameDuration()),
 		rate:  rate,
 	}
 }

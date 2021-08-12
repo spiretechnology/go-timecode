@@ -3,6 +3,7 @@ package timecode
 import (
 	"fmt"
 	"math"
+	"time"
 )
 
 type Components struct {
@@ -95,4 +96,10 @@ func (t *Timecode) Add(other Framer) *Timecode {
 		frame: t.frame + other.Frame(),
 		rate:  t.rate,
 	}
+}
+
+// PresentationTime gets the actual presentation time of the timecode. With drop frame, this will drift from the timecode
+// time before snapping back into place periodically.
+func (t *Timecode) PresentationTime() time.Duration {
+	return t.rate.PlaybackFrameDuration() * time.Duration(t.frame)
 }

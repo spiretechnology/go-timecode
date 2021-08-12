@@ -2,6 +2,7 @@ package timecode_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/spiretechnology/go-timecode"
 )
@@ -37,6 +38,23 @@ func TestParse_DF(t *testing.T) {
 			t.Errorf("Timecode %s should be equivalent to frame %d. Got %d\n", k, f, frame)
 		} else {
 			t.Logf("Success, timecode %s equals frame %d\n", k, f)
+		}
+	}
+}
+
+func TestFromPresentationTime(t *testing.T) {
+	cases := map[time.Duration]string{
+		time.Minute * 2:             "00:02:00:00",
+		time.Minute * 10:            "00:10:00:00",
+		time.Second * 6:             "00:00:06:00",
+		time.Hour*6 + time.Second/2: "06:00:00:12",
+	}
+	for pt, s := range cases {
+		tc := timecode.FromPresentationTime(pt, timecode.Rate_24)
+		if str := tc.String(); str != s {
+			t.Errorf("Presentation time %s should be timecode %s. Got %s\n", pt.String(), s, str)
+		} else {
+			t.Logf("Success, presentation time %s equals timecode %s\n", pt.String(), s)
 		}
 	}
 }
