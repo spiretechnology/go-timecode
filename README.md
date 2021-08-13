@@ -4,6 +4,11 @@ A Go library for parsing and manipulating SMPTE timecodes and frame rates.
 
 Development of this library is very test-driven to ensure accuracy of the frame and timecode calculations. If you'd like to contribute to this library, adding additional useful test cases is a great place to start!
 
+## Installation
+```sh
+go get github.com/spiretechnology/go-timecode
+```
+
 ## Usage Examples
 ### Parse a timecode (drop frame)
 ```go
