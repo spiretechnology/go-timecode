@@ -3,7 +3,6 @@ package timecode
 import (
 	"fmt"
 	"math"
-	"time"
 )
 
 type Components struct {
@@ -19,8 +18,9 @@ func (c Components) Equals(other Components) bool {
 
 // Timecode represents a timecode value, either as a duration or a specific point in time
 type Timecode struct {
-	frame int64
-	rate  Rate
+	frame     int64
+	rate      Rate
+	dropFrame bool
 }
 
 // Frame gets the frame index for this timecode
@@ -30,19 +30,21 @@ func (t *Timecode) Frame() int64 {
 
 // Components gets the components of the timecode: hours, minutes, seconds, frames.
 func (t *Timecode) Components() Components {
-
 	// Track the total number of frames in the timecode. If it's a drop frame rate, we need to
 	// increment the number of frames to make the rest of the calculations work out.
 	totalFrames := t.frame
-	if t.rate.DropFrame {
-		totalFrames += CountFramesToDrop(totalFrames, t.rate.Num)
+	if t.dropFrame {
+		totalFrames += CountFramesToDrop(totalFrames, t.rate)
 	}
 
+	// Round up the framerate
+	rateRoundedUp := t.rate.RoundUp()
+
 	// Track the remaining frames
-	frames := totalFrames % int64(t.rate.Num)
+	frames := totalFrames % rateRoundedUp
 
 	// Count the number of seconds
-	totalSeconds := (totalFrames - frames) / int64(t.rate.Num)
+	totalSeconds := (totalFrames - frames) / rateRoundedUp
 	seconds := totalSeconds % 60
 
 	// Count the number of minutes
@@ -59,25 +61,22 @@ func (t *Timecode) Components() Components {
 		seconds,
 		frames,
 	}
-
 }
 
 // String creates a string representation for the timecode
 func (t *Timecode) String() string {
-
 	// Get the components of the timecode
 	components := t.Components()
 
 	// Determine the separator
 	sep := ":"
-	if t.rate.DropFrame {
+	if t.dropFrame {
 		sep = ";"
 	}
 
-	// Determine the number of digits in the frame rate
-	frameDigits := int(math.Log10(float64(t.rate.Num-1))) + 1
-
-	// Create the format string for the frames
+	// Determine the number of digits in the frame rate, and create the format string. We do this to account
+	// for triple-digit frame rates.
+	frameDigits := int(math.Log10(float64(t.rate.RoundUp()))) + 1
 	frameFormat := fmt.Sprintf("%%0%dd", frameDigits)
 
 	// Format the timecode
@@ -89,7 +88,6 @@ func (t *Timecode) String() string {
 		sep,
 		fmt.Sprintf(frameFormat, components.Frames),
 	)
-
 }
 
 // Equals checks if this timecode is equal to another framer
@@ -100,13 +98,8 @@ func (t *Timecode) Equals(other Framer) bool {
 // Add adds another framer instance to this timecode
 func (t *Timecode) Add(other Framer) *Timecode {
 	return &Timecode{
-		frame: t.frame + other.Frame(),
-		rate:  t.rate,
+		frame:     t.frame + other.Frame(),
+		rate:      t.rate,
+		dropFrame: t.dropFrame,
 	}
-}
-
-// PresentationTime gets the actual presentation time of the timecode. With drop frame, this will drift from the timecode
-// time before snapping back into place periodically.
-func (t *Timecode) PresentationTime() time.Duration {
-	return t.rate.PlaybackFrameDuration() * time.Duration(t.frame)
 }

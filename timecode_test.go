@@ -11,7 +11,7 @@ func TestTimecode_FrameToString_DF(t *testing.T) {
 		2878: "00:02:00;02",
 	}
 	for f, tcode := range cases {
-		tc := timecode.FromFrame(f, timecode.Rate_23_976)
+		tc := timecode.FromFrame(f, timecode.Rate_23_976, true)
 		if str := tc.String(); str != tcode {
 			t.Errorf("Frame %d should be equivalent to timecode %s. Got %s\n", f, tcode, str)
 		} else {
@@ -60,23 +60,6 @@ func TestTimecode_AddOne_DF(t *testing.T) {
 	}
 }
 
-func bruteForceAdd1(c timecode.Components) timecode.Components {
-	c.Frames++
-	if c.Frames >= 24 {
-		c.Frames -= 24
-		c.Seconds++
-		if c.Seconds >= 60 {
-			c.Seconds -= 60
-			c.Minutes++
-			if c.Minutes >= 60 {
-				c.Minutes -= 60
-				c.Hours++
-			}
-		}
-	}
-	return c
-}
-
 // TestTimecodeSequenceNDF jumps to a starting point and then seeks through the frames 1 by 1 to make sure
 // the generated timecodes match what the result would be if we brute forced. Brute forcing is much slower
 // if we're adding multiple frames, but adding just 1 frame allows us to put it up head-to-head against
@@ -97,8 +80,6 @@ func TestTimecodeSequenceNDF(t *testing.T) {
 			expectedComp := bruteForceAdd1(prevComp)
 			if !comp.Equals(expectedComp) {
 				t.Errorf("Add 1 frame, skipped from %s to %s\n", prevTc.String(), tc.String())
-				// } else {
-				// 	t.Logf("Success, %s + 1 frame = %s", prevTc.String(), tc.String())
 			}
 			prevTc = tc
 			prevComp = comp
@@ -106,7 +87,7 @@ func TestTimecodeSequenceNDF(t *testing.T) {
 	}
 }
 
-func bruteForceAdd1_DF(c timecode.Components) timecode.Components {
+func bruteForceAdd1(c timecode.Components) timecode.Components {
 	c.Frames++
 	if c.Frames >= 24 {
 		c.Frames -= 24
@@ -120,6 +101,11 @@ func bruteForceAdd1_DF(c timecode.Components) timecode.Components {
 			}
 		}
 	}
+	return c
+}
+
+func bruteForceAdd1_DF(c timecode.Components) timecode.Components {
+	c = bruteForceAdd1(c)
 	if (c.Minutes%10 > 0) && (c.Seconds == 0) && (c.Frames == 0 || c.Frames == 1) {
 		c.Frames = 2
 	}
@@ -132,9 +118,9 @@ func bruteForceAdd1_DF(c timecode.Components) timecode.Components {
 // our timecode implementation to ensure correctness.
 func TestTimecodeSequenceDF(t *testing.T) {
 	startTimecodes := map[string]int{
-		"00:00:00:00": 100000,
-		"03:59:59:00": 100000,
-		"01:05:59:23": 100000,
+		"00:00:00;00": 100000,
+		"03:59:59;00": 100000,
+		"01:05:59;23": 100000,
 	}
 	for startTimecodeStr, iterations := range startTimecodes {
 		prevTc, _ := timecode.Parse(startTimecodeStr, timecode.Rate_23_976)
@@ -147,8 +133,6 @@ func TestTimecodeSequenceDF(t *testing.T) {
 			expectedComp := bruteForceAdd1_DF(prevComp)
 			if !comp.Equals(expectedComp) {
 				t.Errorf("Add 1 frame, skipped from %s to %s\n", prevTc.String(), tc.String())
-				// } else {
-				// 	t.Logf("Success, %s + 1 frame = %s", prevTc.String(), tc.String())
 			}
 			prevTc = tc
 			prevComp = comp
