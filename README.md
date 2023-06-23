@@ -26,7 +26,7 @@ tc.Frame() // => 1511
 
 ### Create a timecode from a frame count
 ```go
-tc := timecode.FromFrame(1511, timecode.Rate_24)
+tc := timecode.FromFrame(1511, timecode.Rate_24, false /* non-drop frame */)
 tc.String() // => 00:01:02:23
 tc.Frame() // => 1511
 ```
@@ -49,3 +49,7 @@ Those dropped timecodes don't correspond to any actual frame number, and so we n
 
 ## Contributing
 We welcome contributions that make this library more reliable. To add test cases, fix bugs, or anything else, please submit a pull request.
+
+## Other resources
+
+- [spiretechnology/js-timecode](https://github.com/spiretechnology.com/go-timecode) - A TypeScript / JavaScript library for parsing and manipulating SMPTE timecodes and frame rates.
