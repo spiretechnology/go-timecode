@@ -2,7 +2,6 @@ package timecode
 
 import (
 	"fmt"
-	"math"
 )
 
 type Components struct {
@@ -28,23 +27,12 @@ func (t *Timecode) Frame() int64 {
 	return t.frame
 }
 
-// Components gets the components of the timecode: hours, minutes, seconds, frames.
-func (t *Timecode) Components() Components {
-	// Track the total number of frames in the timecode. If it's a drop frame rate, we need to
-	// increment the number of frames to make the rest of the calculations work out.
-	totalFrames := t.frame
-	if t.dropFrame {
-		totalFrames += CountFramesToDrop(totalFrames, t.rate)
-	}
-
-	// Round up the framerate
-	rateRoundedUp := t.rate.RoundUp()
-
+func (t *Timecode) componentsNDF(frame int64) Components {
 	// Track the remaining frames
-	frames := totalFrames % rateRoundedUp
+	frames := frame % t.rate.Nominal
 
 	// Count the number of seconds
-	totalSeconds := (totalFrames - frames) / rateRoundedUp
+	totalSeconds := (frame - frames) / t.rate.Nominal
 	seconds := totalSeconds % 60
 
 	// Count the number of minutes
@@ -63,6 +51,45 @@ func (t *Timecode) Components() Components {
 	}
 }
 
+func (t *Timecode) componentsDF(frame int64) Components {
+	// Calculate the NDF components
+	comps := t.componentsNDF(frame)
+
+	// Count the total number of minutes crossed
+	minutesCrossed := comps.Hours*60 + comps.Minutes
+	dropFrameIncidents := minutesCrossed - minutesCrossed/10
+
+	// As long as there are unhandled drop frame incidents
+	for dropFrameIncidents > 0 {
+		// Add the appropriate number of frames
+		frame += dropFrameIncidents * t.rate.Drop
+
+		// Recalculate the NDF components
+		newComps := t.componentsNDF(frame)
+
+		// Count the number of drop frame incidents
+		dropFrameIncidents = 0
+		for m := comps.Hours*60 + comps.Minutes + 1; m <= newComps.Hours*60+newComps.Minutes; m++ {
+			if m%10 > 0 {
+				dropFrameIncidents++
+			}
+		}
+
+		// Update the components
+		comps = newComps
+	}
+	return comps
+}
+
+// Components gets the components of the timecode: hours, minutes, seconds, frames.
+func (t *Timecode) Components() Components {
+	if !t.dropFrame {
+		return t.componentsNDF(t.frame)
+	} else {
+		return t.componentsDF(t.frame)
+	}
+}
+
 // String creates a string representation for the timecode
 func (t *Timecode) String() string {
 	// Get the components of the timecode
@@ -76,7 +103,7 @@ func (t *Timecode) String() string {
 
 	// Determine the number of digits in the frame rate, and create the format string. We do this to account
 	// for triple-digit frame rates.
-	frameDigits := int(math.Log10(float64(t.rate.RoundUp()))) + 1
+	frameDigits := len(fmt.Sprintf("%d", t.rate.Nominal))
 	frameFormat := fmt.Sprintf("%%0%dd", frameDigits)
 
 	// Format the timecode
@@ -102,4 +129,8 @@ func (t *Timecode) Add(other Framer) *Timecode {
 		rate:      t.rate,
 		dropFrame: t.dropFrame,
 	}
+}
+
+func (t *Timecode) AddFrames(other int64) *Timecode {
+	return t.Add(Frame(other))
 }

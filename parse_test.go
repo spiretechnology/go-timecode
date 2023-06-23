@@ -50,6 +50,7 @@ func TestParseInvalidDF(t *testing.T) {
 	}
 	for k, s := range cases {
 		tc, _ := timecode.Parse(k, timecode.Rate_23_976)
+		t.Logf("%s => %d\n", k, tc.Frame())
 		if str := tc.String(); str != s {
 			t.Errorf("DF timecode %s should be rounded to timecode %s. Got %s\n", k, s, str)
 		} else {

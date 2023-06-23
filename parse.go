@@ -9,6 +9,15 @@ import (
 // TimecodeRegex is the pattern for a valid SMPTE timecode
 var TimecodeRegex = regexp.MustCompile(`^(\d\d)(:|;)(\d\d)(:|;)(\d\d)(:|;)(\d+)$`)
 
+// MustParse parses a timecode from a string, and treats it using the provided frame rate value
+func MustParse(timecode string, rate Rate) *Timecode {
+	tc, err := Parse(timecode, rate)
+	if err != nil {
+		panic(err)
+	}
+	return tc
+}
+
 // Parse parses a timecode from a string, and treats it using the provided frame rate value
 func Parse(timecode string, rate Rate) (*Timecode, error) {
 	// Match it against the regular expression
@@ -32,25 +41,28 @@ func Parse(timecode string, rate Rate) (*Timecode, error) {
 		minutes,
 		seconds,
 		frames,
-	}, rate, dropFrame)
+	}, rate, dropFrame), nil
 }
 
-func FromComponents(components Components, rate Rate, dropFrame bool) (*Timecode, error) {
+func FromComponents(components Components, rate Rate, dropFrame bool) *Timecode {
 	// If the rate is drop frame, we need to check that the provided frame
 	// isn't a dropped frame, which needs to be rounded to the nearest
 	// valid frame timecode
-	if dropFrame && (components.Minutes%10 > 0) && (components.Seconds == 0) && (components.Frames == 0 || components.Frames == 1) {
+	if dropFrame && (components.Minutes%10 > 0) && (components.Seconds == 0) && (components.Frames < rate.Drop) {
 		// Move to the next valid frame in sequence
-		components.Frames = 2
+		components.Frames = rate.Drop
 	}
 
-	// Count the total number of frames in the timecode, ignoring dropped frames for now
-	totalFrames := ((((components.Hours*60)+components.Minutes)*60)+components.Seconds)*rate.RoundUp() + components.Frames
+	// Count the total number of frames in the timecode
+	totalMinutes := components.Hours*60 + components.Minutes
+	totalFrames := (totalMinutes*60+components.Seconds)*rate.Nominal + components.Frames
 
-	// If we're in drop frame, count the number of frames that need to be subtracted from the frame count.
-	// This is equal to the number of 1-minute intervals that are not multiples of 10, times 2.
+	// If it's drop frame, account for the drop incidents
 	if dropFrame {
-		totalFrames -= (components.Minutes - components.Minutes/10) * 2
+		dropFrameIncidents := totalMinutes - totalMinutes/10
+		if dropFrameIncidents > 0 {
+			totalFrames -= dropFrameIncidents * rate.Drop
+		}
 	}
 
 	// Return the timecode with the total frames
@@ -58,7 +70,7 @@ func FromComponents(components Components, rate Rate, dropFrame bool) (*Timecode
 		frame:     totalFrames,
 		rate:      rate,
 		dropFrame: dropFrame,
-	}, nil
+	}
 }
 
 func FromFrame(frame int64, rate Rate, dropFrame bool) *Timecode {

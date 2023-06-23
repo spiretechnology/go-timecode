@@ -4,7 +4,40 @@ import (
 	"testing"
 
 	"github.com/spiretechnology/go-timecode"
+	"github.com/stretchr/testify/require"
 )
+
+func TestTimecode_DFFormatAndParse(t *testing.T) {
+	t.Run("parse DF timecode to frame count", func(t *testing.T) {
+		require.Equal(t, timecode.MustParse("00:00:00;00", timecode.Rate_59_94).Frame(), int64(0))
+		require.Equal(t, timecode.MustParse("00:00:01;00", timecode.Rate_59_94).Frame(), int64(60))
+		require.Equal(t, timecode.MustParse("00:01:00;04", timecode.Rate_59_94).Frame(), int64(60*60))
+	})
+	t.Run("format frame count to timecode string", func(t *testing.T) {
+		require.Equal(t, "00:00:00;00", timecode.FromFrame(0, timecode.Rate_59_94, true).String())
+		require.Equal(t, "00:00:01;00", timecode.FromFrame(60, timecode.Rate_59_94, true).String())
+		require.Equal(t, "00:01:00;04", timecode.FromFrame(60*60, timecode.Rate_59_94, true).String())
+	})
+	t.Run("parse and format timecodes without change", func(t *testing.T) {
+		require.Equal(t, "00:00:00;00", timecode.MustParse("00:00:00;00", timecode.Rate_59_94).String())
+		require.Equal(t, "00:00:01;00", timecode.MustParse("00:00:01;00", timecode.Rate_59_94).String())
+		require.Equal(t, "00:00:10;00", timecode.MustParse("00:00:10;00", timecode.Rate_59_94).String())
+		require.Equal(t, "00:01:00;04", timecode.MustParse("00:01:00;04", timecode.Rate_59_94).String())
+		require.Equal(t, "14:55:41;22", timecode.MustParse("14:55:41;22", timecode.Rate_59_94).String())
+		require.Equal(t, "14:00:41;22", timecode.MustParse("14:00:41;22", timecode.Rate_59_94).String())
+		require.Equal(t, "10:55:41;00", timecode.MustParse("10:55:41;00", timecode.Rate_59_94).String())
+		require.Equal(t, "14:55:41;22", timecode.MustParse("14:55:41;22", timecode.Rate_59_94).String())
+		require.Equal(t, "14:55:04;22", timecode.MustParse("14:55:04;22", timecode.Rate_59_94).String())
+		require.Equal(t, "13:15:00;40", timecode.MustParse("13:15:00;40", timecode.Rate_59_94).String())
+	})
+}
+
+func TestTimecode_DFFrameIncrement(t *testing.T) {
+	t.Run("increment frame", func(t *testing.T) {
+		require.Equal(t, "14:55:41;23", timecode.MustParse("14:55:41;22", timecode.Rate_59_94).AddFrames(1).String())
+		require.Equal(t, "14:57:00;04", timecode.MustParse("14:56:59;59", timecode.Rate_59_94).AddFrames(1).String())
+	})
+}
 
 func TestTimecode_FrameToString_DF(t *testing.T) {
 	cases := map[int64]string{
@@ -51,7 +84,7 @@ func TestTimecode_AddOne_DF(t *testing.T) {
 	}
 	for fromTC, toTC := range sequences {
 		tc, _ := timecode.Parse(fromTC, timecode.Rate_23_976)
-		next := tc.Add(timecode.Frame(1))
+		next := tc.AddFrames(1)
 		if str := next.String(); str != toTC {
 			t.Errorf("Expected %s => %s, got %s\n", fromTC, toTC, str)
 		} else {
@@ -77,7 +110,7 @@ func TestTimecodeSequenceNDF(t *testing.T) {
 		for i := 0; i < iterations; i++ {
 			tc := prevTc.Add(timecode.Frame(1))
 			comp := tc.Components()
-			expectedComp := bruteForceAdd1(prevComp)
+			expectedComp := bruteForceAdd1(prevComp, timecode.Rate_24)
 			if !comp.Equals(expectedComp) {
 				t.Errorf("Add 1 frame, skipped from %s to %s\n", prevTc.String(), tc.String())
 			}
@@ -87,10 +120,10 @@ func TestTimecodeSequenceNDF(t *testing.T) {
 	}
 }
 
-func bruteForceAdd1(c timecode.Components) timecode.Components {
+func bruteForceAdd1(c timecode.Components, rate timecode.Rate) timecode.Components {
 	c.Frames++
-	if c.Frames >= 24 {
-		c.Frames -= 24
+	if c.Frames >= rate.Nominal {
+		c.Frames -= rate.Nominal
 		c.Seconds++
 		if c.Seconds >= 60 {
 			c.Seconds -= 60
@@ -104,10 +137,10 @@ func bruteForceAdd1(c timecode.Components) timecode.Components {
 	return c
 }
 
-func bruteForceAdd1_DF(c timecode.Components) timecode.Components {
-	c = bruteForceAdd1(c)
-	if (c.Minutes%10 > 0) && (c.Seconds == 0) && (c.Frames == 0 || c.Frames == 1) {
-		c.Frames = 2
+func bruteForceAdd1_DF(c timecode.Components, rate timecode.Rate) timecode.Components {
+	c = bruteForceAdd1(c, rate)
+	if (c.Minutes%10 > 0) && (c.Seconds == 0) && (c.Frames < rate.Drop) {
+		c.Frames = rate.Drop
 	}
 	return c
 }
@@ -130,7 +163,7 @@ func TestTimecodeSequenceDF(t *testing.T) {
 		for i := 0; i < iterations; i++ {
 			tc := prevTc.Add(timecode.Frame(1))
 			comp := tc.Components()
-			expectedComp := bruteForceAdd1_DF(prevComp)
+			expectedComp := bruteForceAdd1_DF(prevComp, timecode.Rate_23_976)
 			if !comp.Equals(expectedComp) {
 				t.Errorf("Add 1 frame, skipped from %s to %s\n", prevTc.String(), tc.String())
 			}
