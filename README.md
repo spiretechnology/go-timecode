@@ -52,4 +52,4 @@ We welcome contributions that make this library more reliable. To add test cases
 
 ## Other resources
 
-- [spiretechnology/js-timecode](https://github.com/spiretechnology.com/go-timecode) - A TypeScript / JavaScript library for parsing and manipulating SMPTE timecodes and frame rates.
+- [spiretechnology/js-timecode](https://github.com/spiretechnology/go-timecode) - A TypeScript / JavaScript library for parsing and manipulating SMPTE timecodes and frame rates.
