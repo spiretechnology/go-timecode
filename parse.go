@@ -48,20 +48,20 @@ func FromComponents(components Components, rate Rate, dropFrame bool) *Timecode 
 	// If the rate is drop frame, we need to check that the provided frame
 	// isn't a dropped frame, which needs to be rounded to the nearest
 	// valid frame timecode
-	if dropFrame && (components.Minutes%10 > 0) && (components.Seconds == 0) && (components.Frames < rate.Drop) {
+	if dropFrame && (components.Minutes%10 > 0) && (components.Seconds == 0) && (components.Frames < int64(rate.Drop)) {
 		// Move to the next valid frame in sequence
-		components.Frames = rate.Drop
+		components.Frames = int64(rate.Drop)
 	}
 
 	// Count the total number of frames in the timecode
 	totalMinutes := components.Hours*60 + components.Minutes
-	totalFrames := (totalMinutes*60+components.Seconds)*rate.Nominal + components.Frames
+	totalFrames := (totalMinutes*60+components.Seconds)*int64(rate.Nominal) + components.Frames
 
 	// If it's drop frame, account for the drop incidents
 	if dropFrame {
 		dropFrameIncidents := totalMinutes - totalMinutes/10
 		if dropFrameIncidents > 0 {
-			totalFrames -= dropFrameIncidents * rate.Drop
+			totalFrames -= dropFrameIncidents * int64(rate.Drop)
 		}
 	}
 

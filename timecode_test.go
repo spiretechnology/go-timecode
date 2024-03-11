@@ -122,8 +122,8 @@ func TestTimecodeSequenceNDF(t *testing.T) {
 
 func bruteForceAdd1(c timecode.Components, rate timecode.Rate) timecode.Components {
 	c.Frames++
-	if c.Frames >= rate.Nominal {
-		c.Frames -= rate.Nominal
+	if c.Frames >= int64(rate.Nominal) {
+		c.Frames -= int64(rate.Nominal)
 		c.Seconds++
 		if c.Seconds >= 60 {
 			c.Seconds -= 60
@@ -139,8 +139,8 @@ func bruteForceAdd1(c timecode.Components, rate timecode.Rate) timecode.Componen
 
 func bruteForceAdd1_DF(c timecode.Components, rate timecode.Rate) timecode.Components {
 	c = bruteForceAdd1(c, rate)
-	if (c.Minutes%10 > 0) && (c.Seconds == 0) && (c.Frames < rate.Drop) {
-		c.Frames = rate.Drop
+	if (c.Minutes%10 > 0) && (c.Seconds == 0) && (c.Frames < int64(rate.Drop)) {
+		c.Frames = int64(rate.Drop)
 	}
 	return c
 }

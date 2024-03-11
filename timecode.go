@@ -29,10 +29,10 @@ func (t *Timecode) Frame() int64 {
 
 func (t *Timecode) componentsNDF(frame int64) Components {
 	// Track the remaining frames
-	frames := frame % t.rate.Nominal
+	frames := frame % int64(t.rate.Nominal)
 
 	// Count the number of seconds
-	totalSeconds := (frame - frames) / t.rate.Nominal
+	totalSeconds := (frame - frames) / int64(t.rate.Nominal)
 	seconds := totalSeconds % 60
 
 	// Count the number of minutes
@@ -62,7 +62,7 @@ func (t *Timecode) componentsDF(frame int64) Components {
 	// As long as there are unhandled drop frame incidents
 	for dropFrameIncidents > 0 {
 		// Add the appropriate number of frames
-		frame += dropFrameIncidents * t.rate.Drop
+		frame += dropFrameIncidents * int64(t.rate.Drop)
 
 		// Recalculate the NDF components
 		newComps := t.componentsNDF(frame)

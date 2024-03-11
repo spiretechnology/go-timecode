@@ -1,5 +1,16 @@
 package timecode
 
+import (
+	"math"
+	"strconv"
+	"strings"
+)
+
+const (
+	dropOccurrencesPerHour = 54
+	secondsPerHour         = 60 * 60
+)
+
 var (
 	// 23.976 has exactly 24 frames per second. However, the textual representation of timecodes using this rate
 	// skip two frames every minute, except when the minute is a multiple of 10. This is because 23.976 footage
@@ -17,9 +28,9 @@ var (
 // Rate represents a frame rate for a timecode
 type Rate struct {
 	Str      string
-	Nominal  int64
-	Drop     int64
-	Num, Den int64
+	Nominal  int
+	Drop     int
+	Num, Den int
 }
 
 // String creates a string representation of the rate
@@ -44,4 +55,36 @@ func ParseRate(str string) (Rate, bool) {
 		return Rate_59_94, true
 	}
 	return Rate{}, false
+}
+
+// RateFromFraction returns a Rate from a numerator and denominator.
+func RateFromFraction(num, den int) Rate {
+	// Calculate the nominal frame rate (number of frames in a second without drops)
+	var nominal int
+	if num%den == 0 {
+		nominal = num / den
+	} else {
+		nominal = den - (num % den)
+	}
+
+	// Format it as a string (ie. 23.976)
+	str := strconv.FormatFloat(float64(num)/float64(den), 'f', 3, 64)
+	for strings.HasSuffix(str, "0") {
+		str = str[:len(str)-1]
+	}
+	str = strings.TrimSuffix(str, ".")
+
+	// Calculate the number of frames to skip per drop occurrence
+	actualFramesPerHour := num * secondsPerHour / den
+	nominalFramesPerHour := nominal * secondsPerHour
+	totalFramesDropped := nominalFramesPerHour - actualFramesPerHour
+	framesPerDrop := int(math.Round(float64(totalFramesDropped) / float64(dropOccurrencesPerHour)))
+
+	return Rate{
+		Str:     str,
+		Nominal: nominal,
+		Drop:    framesPerDrop,
+		Num:     num,
+		Den:     den,
+	}
 }
