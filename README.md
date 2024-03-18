@@ -14,7 +14,7 @@ go get github.com/spiretechnology/go-timecode
 ```go
 tc, err := timecode.Parse("00:01:02;23", timecode.Rate_29_97)
 tc.String() // => 00:01:02;23
-tc.Frame() // => 1883
+tc.Frame() // => 1881
 ```
 
 ### Parse a timecode (non-drop frame)
