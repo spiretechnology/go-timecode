@@ -25,13 +25,13 @@ func TestParse_NDF(t *testing.T) {
 
 func TestParse_DF(t *testing.T) {
 	cases := map[string]int64{
-		"00:02:00;02": 2878,
-		"00:01:59;23": 2877,
-		"00:01:59;22": 2876,
-		"00:03:00;04": 4318,
+		"00:02:00;02": 3598,
+		"00:01:59;23": 3591,
+		"00:01:59;22": 3590,
+		"00:03:00;04": 5398,
 	}
 	for k, f := range cases {
-		tc, _ := timecode.Parse(k, timecode.Rate_23_976)
+		tc, _ := timecode.Parse(k, timecode.Rate_29_97)
 		if frame := tc.Frame(); frame != f {
 			t.Errorf("Timecode %s should be equivalent to frame %d. Got %d\n", k, f, frame)
 		} else {
@@ -49,7 +49,7 @@ func TestParseInvalidDF(t *testing.T) {
 		"00:02:00;03": "00:02:00;03",
 	}
 	for k, s := range cases {
-		tc, _ := timecode.Parse(k, timecode.Rate_23_976)
+		tc, _ := timecode.Parse(k, timecode.Rate_29_97)
 		t.Logf("%s => %d\n", k, tc.Frame())
 		if str := tc.String(); str != s {
 			t.Errorf("DF timecode %s should be rounded to timecode %s. Got %s\n", k, s, str)

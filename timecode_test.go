@@ -41,7 +41,7 @@ func TestTimecode_DFFrameIncrement(t *testing.T) {
 
 func TestTimecode_FrameToString_DF(t *testing.T) {
 	cases := map[int64]string{
-		2878: "00:02:00;02",
+		2878: "00:01:59;22",
 	}
 	for f, tcode := range cases {
 		tc := timecode.FromFrame(f, timecode.Rate_23_976, true)
@@ -77,13 +77,13 @@ func TestTimecode_Identity_DF(t *testing.T) {
 
 func TestTimecode_AddOne_DF(t *testing.T) {
 	sequences := map[string]string{
-		"00:00:59;23": "00:01:00;02",
-		"00:03:59;23": "00:04:00;02",
-		"00:01:59;23": "00:02:00;02",
-		"00:09:59;23": "00:10:00;00",
+		"00:00:59;29": "00:01:00;02",
+		"00:03:59;29": "00:04:00;02",
+		"00:01:59;29": "00:02:00;02",
+		"00:09:59;29": "00:10:00;00",
 	}
 	for fromTC, toTC := range sequences {
-		tc, _ := timecode.Parse(fromTC, timecode.Rate_23_976)
+		tc, _ := timecode.Parse(fromTC, timecode.Rate_29_97)
 		next := tc.AddFrames(1)
 		if str := next.String(); str != toTC {
 			t.Errorf("Expected %s => %s, got %s\n", fromTC, toTC, str)
